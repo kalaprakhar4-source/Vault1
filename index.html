@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Vault</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg1:#f6f1ff;--bg2:#ffeede;--bg3:#e6f4ff;--card:rgba(255,255,255,.7);--line:rgba(30,20,60,.1);--tx:#1d1a2b;--mut:#6d6884;--gold:#b7791f;--silver:#5b6b82;--acc:#6c4cf5;--good:#12a066;--bad:#d64550;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;--bg1:#14102b;--bg2:#2a1630;--bg3:#0e2236;--card:rgba(255,255,255,.07);--line:rgba(255,255,255,.12);--tx:#f3f0ff;--mut:#a39fc0;--gold:#f2c35c;--silver:#c5d0e3;--acc:#9b85ff;--good:#4fd69c;--bad:#ff7a85}}
+:root[data-theme="dark"]{color-scheme:dark;--bg1:#14102b;--bg2:#2a1630;--bg3:#0e2236;--card:rgba(255,255,255,.07);--line:rgba(255,255,255,.12);--tx:#f3f0ff;--mut:#a39fc0;--gold:#f2c35c;--silver:#c5d0e3;--acc:#9b85ff;--good:#4fd69c;--bad:#ff7a85}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;font-family:Inter,system-ui,sans-serif;color:var(--tx);background:linear-gradient(135deg,var(--bg1),var(--bg2) 50%,var(--bg3));background-attachment:fixed}
+.wrap{max-width:860px;margin:0 auto;padding:22px 16px 60px}
+h1,h2,.serif{font-family:Fraunces,Georgia,serif;font-weight:700;margin:0}
+.card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:18px;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+.grid{display:grid;gap:12px}
+.g2{grid-template-columns:repeat(2,1fr)}.g3{grid-template-columns:repeat(3,1fr)}
+@media(max-width:600px){.g3{grid-template-columns:1fr 1fr}}
+.lbl{font-size:12px;color:var(--mut);letter-spacing:.04em;text-transform:uppercase}
+.big{font-family:Fraunces,Georgia,serif;font-size:26px;font-weight:700;margin-top:4px;word-break:break-word}
+.sub{font-size:13px;color:var(--mut);margin-top:2px}
+.good{color:var(--good)}.bad{color:var(--bad)}.gold{color:var(--gold)}.silver{color:var(--silver)}
+input,select,button,textarea{font:inherit;color:var(--tx)}
+input,select{width:100%;padding:11px 12px;border-radius:12px;border:1px solid var(--line);background:var(--card);outline:none}
+input:focus,select:focus{border-color:var(--acc)}
+label{display:block;font-size:12px;color:var(--mut);margin:0 0 4px}
+.btn{border:0;border-radius:14px;padding:12px 18px;font-weight:600;cursor:pointer;background:linear-gradient(135deg,#7b5cff,#e0679a);color:#fff}
+.btn.ghost{background:var(--card);color:var(--tx);border:1px solid var(--line)}
+.row{display:grid;gap:10px;grid-template-columns:repeat(2,1fr);margin-bottom:12px}
+.full{grid-column:1/-1}
+.top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:18px}
+.top h1{font-size:30px;line-height:1.15}
+section{margin-top:18px}
+h2{font-size:19px;margin-bottom:10px}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.tab{padding:8px 14px;border-radius:999px;border:1px solid var(--line);background:var(--card);cursor:pointer;font-size:13px}
+.tab.on{background:var(--acc);color:#fff;border-color:transparent}
+.scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px;min-width:520px}
+th{text-align:left;color:var(--mut);font-weight:500;padding:8px 6px;border-bottom:1px solid var(--line)}
+td{padding:9px 6px;border-bottom:1px solid var(--line)}
+.x{background:none;border:0;color:var(--mut);cursor:pointer;font-size:16px}
+.bars{display:flex;align-items:flex-end;gap:8px;height:110px;margin-top:8px}
+.bar{flex:1;min-width:18px;border-radius:8px 8px 0 0;background:linear-gradient(180deg,#7b5cff,#e0679a);position:relative}
+.bar span{position:absolute;bottom:-18px;left:50%;transform:translateX(-50%);font-size:10px;color:var(--mut);white-space:nowrap}
+.answer{white-space:pre-wrap;line-height:1.55;font-size:14px;margin-top:12px}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.hide{display:none}
+.welcome{min-height:80vh;display:flex;flex-direction:column;justify-content:center;max-width:420px;margin:0 auto}
+.welcome h1{font-size:40px;margin-bottom:8px}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<script>
+(function(){
+var KEY='vault-v1',S={name:'',cur:'INR',prices:{silver:0,gold:0},tx:[]},tab='save',ans='';
+var ck=null,csalt=null,locked=null;try{var r=localStorage.getItem(KEY);if(r){var P=JSON.parse(r);if(P.enc)locked=P;else S=P}}catch(e){}
+function b64(a){return btoa(String.fromCharCode.apply(null,new Uint8Array(a)))}
+function unb(s){return Uint8Array.from(atob(s),function(c){return c.charCodeAt(0)})}
+function derive(pw,salt){return crypto.subtle.importKey('raw',new TextEncoder().encode(pw),'PBKDF2',false,['deriveKey']).then(function(k){return crypto.subtle.deriveKey({name:'PBKDF2',salt:salt,iterations:250000,hash:'SHA-256'},k,{name:'AES-GCM',length:256},false,['encrypt','decrypt'])})}
+function save(){try{if(!ck){localStorage.setItem(KEY,JSON.stringify(S));return}var iv=crypto.getRandomValues(new Uint8Array(12));crypto.subtle.encrypt({name:'AES-GCM',iv:iv},ck,new TextEncoder().encode(JSON.stringify(S))).then(function(d){try{localStorage.setItem(KEY,JSON.stringify({enc:1,salt:b64(csalt),iv:b64(iv),data:b64(d)}))}catch(e){}})}catch(e){}}
+function unlock(msg){
+ $('#app').innerHTML='<div class="welcome"><div class="lbl">Vault</div><h1>Welcome back.</h1><p class="sub" style="margin-bottom:20px">Enter your passcode to open your diary.</p><input id="pw" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="8" placeholder="Passcode" style="margin-bottom:12px"><div class="sub bad" id="err" style="margin-bottom:12px"></div><button class="btn" id="un">Unlock</button> <button class="btn ghost" id="er">Erase everything</button></div>';
+ function go(){var salt=unb(locked.salt);derive($('#pw').value,salt).then(function(k){return crypto.subtle.decrypt({name:'AES-GCM',iv:unb(locked.iv)},k,unb(locked.data)).then(function(d){S=JSON.parse(new TextDecoder().decode(d));ck=k;csalt=salt;locked=null;render()})}).catch(function(){$('#err').textContent='Wrong passcode.'})}
+ $('#pw').oninput=function(){this.value=this.value.replace(/\D/g,'')};$('#un').onclick=go;$('#pw').onkeydown=function(e){if(e.key==='Enter')go()};
+ var ea=0;$('#er').onclick=function(){var b=this;if(!ea){ea=1;b.textContent='Tap again to erase';setTimeout(function(){ea=0;b.textContent='Erase everything'},4000);return}try{localStorage.removeItem(KEY)}catch(e){}locked=null;S={name:'',cur:'INR',prices:{silver:0,gold:0},tx:[]};render()};
+}
+function $(s){return document.querySelector(s)}
+function esc(t){var d=document.createElement('div');d.textContent=t==null?'':t;return d.innerHTML}
+function money(n){try{return new Intl.NumberFormat(S.cur==='INR'?'en-IN':undefined,{style:'currency',currency:S.cur,maximumFractionDigits:0}).format(n||0)}catch(e){return (n||0).toFixed(0)}}
+function g(n){return (Math.round((n||0)*100)/100)+' g'}
+function today(){return new Date().toISOString().slice(0,10)}
+function greet(){var h=new Date().getHours();return h<5?'Hello, night owl':h<12?'Good morning':h<17?'Good afternoon':'Good evening'}
+function calc(){
+ var c={saved:0,other:0,sg:0,gg:0,si:0,gi:0,osi:0,ogi:0,sgu:0,ggu:0,ts:0,tr:[],months:{}};
+ S.tx.forEach(function(t){
+  if(t.open){if(t.type==='save')c.saved+=t.amt;else{var oc=t.grams*t.price;if(!(t.price>0)){if(t.type==='silver')c.sgu+=t.grams;else c.ggu+=t.grams}if(t.type==='silver'){c.sg+=t.grams;c.si+=oc;c.osi+=oc}else{c.gg+=t.grams;c.gi+=oc;c.ogi+=oc}}return}var m=t.date.slice(0,7);c.tr.push(t.date);if(t.type==='save')c.ts+=t.amt;c.months[m]=c.months[m]||{saved:0,spent:0,sg:0,gg:0};
+  if(t.type==='save'){c.saved+=t.amt;c.months[m].saved+=t.amt}
+  else if(t.type==='spend'){c.other+=t.amt;c.months[m].spent+=t.amt}
+  else{var cost=t.grams*t.price;if(t.type==='silver'){c.sg+=t.grams;c.si+=cost;c.months[m].sg+=t.grams}else{c.gg+=t.grams;c.gi+=cost;c.months[m].gg+=t.grams}c.months[m].spent+=cost}
+ });
+ c.sv=c.sg*(S.prices.silver||0);c.gv=c.gg*(S.prices.gold||0);
+ c.cash=c.saved-c.other-(c.si-c.osi)-(c.gi-c.ogi);
+ c.net=c.cash+c.sv+c.gv;
+ var d0=c.tr.slice().sort()[0];c.first=d0||'';
+ c.days=d0?Math.max(1,Math.round((new Date(today())-new Date(d0))/864e5)+1):0;
+ c.mon=c.days/30.44;
+ c.profit=0;c.hasP=false;[['silver',c.sg,c.sgu,c.si],['gold',c.gg,c.ggu,c.gi]].forEach(function(a){var p=S.prices[a[0]]||0;if(p&&a[3]>0){c.profit+=(a[1]-a[2])*p-a[3];c.hasP=true}});return c;
+}
+function warn(m){var b=$('#add');b.textContent=m;setTimeout(function(){b.textContent='Add entry'},2500)}
+function UL(){return S.unit===1000?'kg':S.unit+' g'}
+function pu(x){return money(x*S.unit)+'/'+UL()}
+function mp(k,c){var gr=k==='silver'?c.sg:c.gg,inv=k==='silver'?c.si:c.gi,unk=k==='silver'?c.sgu:c.ggu,pr=S.prices[k]||0,h='<div class="sub">Worth now '+(pr?money(gr*pr):'\u2014')+'</div>';if(pr&&inv>0){var d=(gr-unk)*pr-inv;h+='<div class="sub '+(d>=0?'good':'bad')+'" style="font-weight:600">'+(d>=0?'Profit ':'Loss ')+money(Math.abs(d))+' ('+(d/inv*100).toFixed(1)+'%)</div>'}return h+'<div style="margin-top:10px"><label>Today\u2019s price per '+UL()+'</label><input class="tp" data-k="'+k+'" type="number" step="any" inputmode="decimal" placeholder="" value="'+(pr?+(pr*S.unit).toFixed(2):'')+'"></div>'}
+function rateTxt(c){if(!c.ts)return 'Rates appear as you log savings over time';if(c.days<30)return 'Tracking since '+c.first+' \u2014 rates show after 30 days';var y=c.days>=730?' \u00b7 '+money(c.ts/c.days*365.25)+'/year':'';return 'Since '+c.first+': '+money(c.ts/c.mon)+'/month \u00b7 '+money(c.ts/c.days)+'/day'+y}
+function periods(c){var big=c.mon>24,b={};Object.keys(c.months).forEach(function(k){var kk=big?k.slice(0,4):k,x=c.months[k];b[kk]=b[kk]||{saved:0,spent:0,sg:0,gg:0};['saved','spent','sg','gg'].forEach(function(f){b[kk][f]+=x[f]})});return b}
+function pl(inv,val,pr){if(!inv)return '';if(!pr)return '<div class="sub">Set today\u2019s price to see profit</div>';var d=val-inv;return '<div class="sub '+(d>=0?'good':'bad')+'">'+(d>=0?'+':'')+money(d)+' ('+(d/inv*100).toFixed(1)+'%)</div>'}
+function answer(q){
+ var c=calc(),s=q.toLowerCase(),o='';
+ if(!S.tx.length)return 'Nothing logged yet. Add your first entry above and I\u2019ll analyse it.';
+ var sp=c.other+(c.si-c.osi)+(c.gi-c.ogi);
+ if(/silver/.test(s)&&!/gold/.test(s)){
+  o='Silver: '+g(c.sg)+' collected, '+money(c.si)+' invested'+(c.sg?' (avg '+money(c.si/c.sg)+'/g)':'')+'.';
+  if(S.prices.silver)o+='\nWorth '+money(c.sv)+' today at '+money(S.prices.silver)+'/g \u2192 '+(c.sv-c.si>=0?'profit ':'loss ')+money(Math.abs(c.sv-c.si))+'.';
+ }else if(/gold/.test(s)&&!/silver/.test(s)){
+  o='Gold: '+g(c.gg)+' collected, '+money(c.gi)+' invested'+(c.gg?' (avg '+money(c.gi/c.gg)+'/g)':'')+'.';
+  if(S.prices.gold)o+='\nWorth '+money(c.gv)+' today at '+money(S.prices.gold)+'/g \u2192 '+(c.gv-c.gi>=0?'profit ':'loss ')+money(Math.abs(c.gv-c.gi))+'.';
+ }else if(/month|year|decade|period/.test(s)){
+  var pb2=periods(c);o=(c.mon>24?'By year':'By month')+':\n'+Object.keys(pb2).sort().map(function(m){var x=pb2[m];return m+': saved '+money(x.saved)+', spent '+money(x.spent)+(x.sg?', silver '+g(x.sg):'')+(x.gg?', gold '+g(x.gg):'')}).join('\n')+'\n\n'+rateTxt(c)+' (opening balance not counted in rates)';
+ }else if(/day|daily/.test(s)){
+  o=rateTxt(c);
+ }else if(/spen|went|where/.test(s)){
+  o='Total spent: '+money(sp)+'\n\u2022 Silver: '+money(c.si-c.osi)+'\n\u2022 Gold: '+money(c.gi-c.ogi)+'\n\u2022 Other: '+money(c.other)+(c.saved?'\n\nThat\u2019s '+(sp/c.saved*100).toFixed(0)+'% of what you saved.':'');
+ }else if(/profit|loss|gain|return/.test(s)){
+  o=c.hasP?'Metal '+(c.profit>=0?'profit ':'loss ')+money(Math.abs(c.profit))+' compared with what you paid.':'Enter today\u2019s price on the silver or gold card to see profit.';
+ }else{
+  o='Full picture, '+S.name+':\n\u2022 Saved so far: '+money(c.saved)+'\n\u2022 Silver: '+g(c.sg)+' \u2022 Gold: '+g(c.gg)+'\n\u2022 Metal profit: '+(c.hasP?money(c.profit):'set today\u2019s price on the card')+'\n\u2022 '+rateTxt(c);
+ }
+ return o;
+}
+function welcome(){
+ var cs=['INR','USD','EUR','GBP','AED','SAR','PKR','BDT','NPR','LKR','CAD','AUD','SGD','JPY'];
+ $('#app').innerHTML='<div class="welcome"><div class="lbl">Vault</div><h1>Save quietly.<br>Watch it shine.</h1><p class="sub" style="margin-bottom:20px">Track savings, silver and gold in one calm place. Everything stays in this browser.</p><label>Your name</label><input id="nm" placeholder="Your name" style="margin-bottom:12px"><label>Currency</label><select id="cu" style="margin-bottom:18px">'+cs.map(function(x){return '<option>'+x+'</option>'}).join('')+'</select><div class="lbl" style="margin-bottom:8px">Where you are today (all optional)</div><div class="row"><div class="full">'+field('o-a','Savings so far','number','')+'</div>'+field('o-s','Silver you own (grams)','number','')+field('o-sp','Total you paid for it','number','optional')+field('o-g','Gold you own (grams)','number','')+field('o-gp','Total you paid for it','number','optional')+'</div><button class="btn" id="go">Get started</button></div>';
+ $('#go').onclick=function(){var n=$('#nm').value.trim();if(!n){$('#nm').focus();return}S.name=n;S.cur=$('#cu').value;var o=+$('#o-a').value,d=today();if(o>0)S.tx.push({id:1,type:'save',date:d,open:1,amt:o,note:'Opening balance'});[['silver','o-s','o-sp',2],['gold','o-g','o-gp',3]].forEach(function(x){var gr=+$('#'+x[1]).value;if(gr>0)S.tx.push({id:x[3],type:x[0],date:d,open:1,grams:gr,price:(+$('#'+x[2]).value||0)/gr,mkt:0,note:'Opening balance'})});save();render()};
+}
+function field(id,l,t,ph,v){return '<div><label>'+l+'</label><input id="'+id+'" type="'+t+'" '+(t==='number'?'step="any" inputmode="decimal" ':'')+'placeholder="'+(ph||'')+'" value="'+(v||'')+'"></div>'}
+function form(){
+ var m=tab==='silver'||tab==='gold',h='<div class="row">'+field('f-date','Date','date','',today());
+ if(m)h+=field('f-g','Grams bought','number','')+field('f-p','Total paid ('+S.cur+')','number','')+field('f-m','Market price that day per '+UL(),'number','')+'<div class="full"><label>Prices shown per</label><select id="f-u">'+[[1,'1 g'],[10,'10 g'],[100,'100 g'],[1000,'1 kg']].map(function(u){return '<option value="'+u[0]+'"'+(S.unit===u[0]?' selected':'')+'>'+u[1]+'</option>'}).join('')+'</select></div>';
+ else h+=field('f-a','Amount','number','');
+ h+='<div class="full">'+field('f-n','Note','text','optional')+'</div></div><button class="btn" id="add">Add entry</button>';
+ return h;
+}
+function render(){
+ S.unit=S.unit||10;if(locked){unlock();return}if(!S.name){welcome();return}
+ var c=calc(),sp=c.other+(c.si-c.osi)+(c.gi-c.ogi),pb=periods(c),ks=Object.keys(pb).sort().slice(-8),mx=Math.max.apply(null,ks.map(function(k){return pb[k].saved}).concat([1]));
+ var h='<div class="top"><div><div class="lbl">'+new Date().toDateString()+'</div><h1>'+greet()+',<br>'+esc(S.name)+' \u2728</h1></div><button class="btn ghost" id="reset">Reset</button></div>';
+ h+='<div class="grid g2"><div class="card"><div class="lbl">Saved so far</div><div class="big">'+money(c.saved)+'</div><div class="sub">'+rateTxt(c)+'</div></div>'
+ 
+ +'<div class="card" style="grid-column:span 1"><div class="lbl">Metal profit</div><div class="big '+(c.profit>=0?'good':'bad')+'">'+(c.hasP?(c.profit>=0?'+':'\u2212')+money(Math.abs(c.profit)):'\u2014')+'</div><div class="sub">Silver + gold vs what you paid</div></div></div>';
+ h+='<div class="grid g2" style="margin-top:12px"><div class="card"><div class="lbl silver">\u25cf Silver</div><div class="big">'+g(c.sg)+'</div><div class="sub">Invested '+money(c.si)+(c.sg?' \u00b7 avg '+pu(c.si/c.sg):'')+'</div>'+mp('silver',c)+'</div>'
+ +'<div class="card"><div class="lbl gold">\u25cf Gold</div><div class="big">'+g(c.gg)+'</div><div class="sub">Invested '+money(c.gi)+(c.gg?' \u00b7 avg '+pu(c.gi/c.gg):'')+'</div>'+mp('gold',c)+'</div></div>';
+ 
+ h+='<section class="card"><h2>Add an entry</h2><div class="tabs">'+[['save','Savings'],['silver','Bought silver'],['gold','Bought gold']].map(function(t){return '<div class="tab'+(tab===t[0]?' on':'')+'" data-t="'+t[0]+'">'+t[1]+'</div>'}).join('')+'</div>'+form()+'</section>';
+ h+='<section class="card"><h2>Ask for analysis</h2><div class="row" style="grid-template-columns:1fr auto;margin-bottom:0"><input id="q" placeholder="Ask about your savings"><button class="btn" id="ask">Ask</button></div><div class="chips">'+['Full analysis','Per month','Per day','Silver','Gold','Profit or loss'].map(function(x){return '<div class="tab" data-q="'+x+'">'+x+'</div>'}).join('')+'</div><div class="answer" id="ans">'+esc(ans)+'</div></section>';
+ if(ks.length)h+='<section class="card"><h2>Saved over time</h2><div class="bars" style="margin-bottom:22px">'+ks.map(function(k){return '<div class="bar" style="height:'+Math.max(4,pb[k].saved/mx*100)+'%"><span>'+(k.length>4?k.slice(5)+'/'+k.slice(2,4):k)+'</span></div>'}).join('')+'</div></section>';
+ h+='<section class="card"><h2>History</h2>'+(S.tx.length?'<div class="scroll"><table><tr><th>Date</th><th>Type</th><th>Details</th><th>Amount</th><th></th></tr>'+S.tx.slice().sort(function(a,b){return b.date<a.date?-1:1}).map(function(t){
+  var m=t.type==='silver'||t.type==='gold',a=m?t.grams*t.price:t.amt;
+  var d=m?g(t.grams)+' for '+money(t.grams*t.price)+(t.mkt?' (market '+money(t.mkt*S.unit)+'/'+UL()+')':'')+(S.prices[t.type]&&t.price>0?' \u00b7 '+((S.prices[t.type]-t.price)*t.grams>=0?'+':'')+money((S.prices[t.type]-t.price)*t.grams)+' now':''):'';
+  return '<tr><td>'+(t.open?'Opening':t.date)+'</td><td class="'+(t.type==='gold'?'gold':t.type==='silver'?'silver':t.type==='save'?'good':'')+'">'+t.type+'</td><td>'+d+' '+esc(t.note)+'</td><td>'+money(a)+'</td><td><button class="x" data-d="'+t.id+'">\u2715</button></td></tr>'}).join('')+'</table></div>':'<div class="sub">No entries yet.</div>')+'</section>';
+ h+='<section class="card"><h2>Privacy</h2><div class="sub" style="margin-bottom:10px">Your diary lives only in this browser on this device. Nothing you type here is sent to anyone, and it is never uploaded and is not part of the page link, so anyone you share the link with starts with an empty diary. '+(ck?'It is encrypted with your passcode.':'Add a passcode to encrypt it.')+'</div>'+(ck?'<button class="btn ghost" id="lock">Lock now</button> <button class="btn ghost" id="unpass">Remove passcode</button>':'<div class="row" style="grid-template-columns:1fr auto;margin-bottom:6px"><input id="np" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="8" placeholder="Choose a 4\u20138 digit passcode"><button class="btn" id="setpass">Set</button></div><div class="sub">If you forget it, the data can\u2019t be recovered.</div>')+'</section>';
+ $('#app').innerHTML=h;
+ if($('#np'))$('#np').oninput=function(){this.value=this.value.replace(/\D/g,'')};if($('#setpass'))$('#setpass').onclick=function(){var p=$('#np').value;if(p.length<4){$('#np').placeholder='Needs 4+ digits';return}var sl=crypto.getRandomValues(new Uint8Array(16));derive(p,sl).then(function(k){ck=k;csalt=sl;save();render()})};
+ if($('#lock'))$('#lock').onclick=function(){setTimeout(function(){try{locked=JSON.parse(localStorage.getItem(KEY))}catch(e){}ck=null;unlock()},400)};
+ if($('#unpass'))$('#unpass').onclick=function(){ck=null;save();render()};
+ var armed=0;$('#reset').onclick=function(){var b=this;if(!armed){armed=1;b.textContent='Tap again to erase everything';setTimeout(function(){armed=0;b.textContent='Reset'},4000);return}ck=null;csalt=null;try{localStorage.removeItem(KEY)}catch(e){}S={name:'',cur:'INR',prices:{silver:0,gold:0},tx:[]};ans='';render()};
+ document.querySelectorAll('.tp').forEach(function(e){e.onchange=function(){S.prices[e.dataset.k]=(+e.value||0)/S.unit;save();render()}});if($('#f-u'))$('#f-u').onchange=function(){S.unit=+this.value;save();render()};
+ 
+ document.querySelectorAll('[data-t]').forEach(function(e){e.onclick=function(){tab=e.dataset.t;render()}});
+ document.querySelectorAll('[data-d]').forEach(function(e){e.onclick=function(){S.tx=S.tx.filter(function(t){return t.id!=e.dataset.d});save();render()}});
+ function ask(q){ans=answer(q);$('#ans').textContent=ans}
+ $('#ask').onclick=function(){ask($('#q').value)};
+ $('#q').onkeydown=function(e){if(e.key==='Enter')ask(this.value)};
+ document.querySelectorAll('[data-q]').forEach(function(e){e.onclick=function(){ask(e.dataset.q)}});
+ $('#add').onclick=function(){
+  var t={id:Date.now(),type:tab,date:$('#f-date').value||today(),note:$('#f-n').value.trim()};
+  if(tab==='silver'||tab==='gold'){t.grams=+$('#f-g').value;var tot=+$('#f-p').value;t.price=tot/t.grams;t.mkt=(+$('#f-m').value||0)/S.unit;if(!(t.grams>0&&tot>0)){warn('Enter grams and total paid');return}}
+  else{t.amt=+$('#f-a').value;if(!(t.amt>0)){warn('Enter an amount');return}}
+  S.tx.push(t);save();render();
+ };
+}
+render();
+})();
+</script>
+
+</body>
+</html>
